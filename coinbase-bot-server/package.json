@@ -1,0 +1,34 @@
+{
+  "name": "coinbase-bot-server",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon",
+    "dev:nodewatch": "node --import tsx --watch app.ts",
+    "start": "node --import tsx app.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@coinbase/cdp-sdk": "^1.44.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.2.0",
+    "ccxt": "^4.5.36",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.6",
+    "nodemon": "^3.1.11",
+    "socket.io": "^4.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/mongoose": "^5.11.96"
+  }
+}

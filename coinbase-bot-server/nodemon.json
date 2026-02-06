@@ -1,0 +1,10 @@
+{
+  "watch": ["app.ts", "src"],
+  "ext": "ts,json",
+  "ignore": ["data", "node_modules"],
+  "exec": "node --import tsx app.ts",
+  "signal": "SIGINT",
+  "delay": 200
+}
+
+
