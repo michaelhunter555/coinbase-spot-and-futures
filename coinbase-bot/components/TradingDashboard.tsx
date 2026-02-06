@@ -64,7 +64,7 @@ function tryParseJson(s: unknown): any | null {
 }
 
 export function TradingDashboard() {
-  const { connected, socketUrl, trades, serverStatus, futuresFlipStatus } = useTrades();
+  const { connected, socketUrl, trades, serverStatus, futuresFlipStatus, futuresMomentumStatus } = useTrades();
 
   const [currentProfitLoss, setCurrentProfitLoss] = useState<number | null>(0);
 
@@ -495,6 +495,9 @@ export function TradingDashboard() {
     }
   }, [apiBase]);
 
+  // Use live socket status when available, fallback to last HTTP status
+  const displayDirStatus = futuresMomentumStatus ?? dirStatus;
+
   const previewIssues = useMemo(() => {
     const lastHttp = previewJson?.result?.lastHttpResponse;
     const parsed = tryParseJson(lastHttp);
@@ -816,7 +819,7 @@ export function TradingDashboard() {
                   <Button
                     variant="contained"
                     onClick={doDirStart}
-                    disabled={!connected || dirStartLoading}
+                    disabled={!connected || dirStartLoading || displayDirStatus?.running}
                   >
                     {dirStartLoading ? <CircularProgress size={20} /> : "Start Directional"}
                   </Button>
@@ -824,7 +827,7 @@ export function TradingDashboard() {
                     variant="outlined"
                     color="error"
                     onClick={doDirStop}
-                    disabled={!connected || dirStopLoading}
+                    disabled={!connected || dirStopLoading || !displayDirStatus?.running}
                   >
                     {dirStopLoading ? <CircularProgress size={20} /> : "Stop & Close"}
                   </Button>
@@ -833,33 +836,33 @@ export function TradingDashboard() {
 
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Typography variant="body2" color="text.secondary" component="div">
-                  Status: {dirStatus?.running ? "running" : "stopped"} · Side:{" "}
-                  {dirStatus?.side ?? "—"} · Desired: {dirStatus?.desiredSide ?? "—"}
+                  Status: {displayDirStatus?.running ? "running" : "stopped"} · Side:{" "}
+                  {displayDirStatus?.side ?? "—"} · Desired: {displayDirStatus?.desiredSide ?? "—"}
                   <br />
                   Last price:{" "}
-                  {dirStatus?.lastPrice != null ? Number(dirStatus.lastPrice).toFixed(2) : "—"}
-                  {dirStatus?.entryPrice != null && (
-                    <> · Entry: {Number(dirStatus.entryPrice).toFixed(2)}</>
+                  {displayDirStatus?.lastPrice != null ? Number(displayDirStatus.lastPrice).toFixed(2) : "—"}
+                  {displayDirStatus?.entryPrice != null && (
+                    <> · Entry: {Number(displayDirStatus.entryPrice).toFixed(2)}</>
                   )}
                   <br />
                   Next entry:{" "}
-                  {dirStatus?.nextEntryPrice != null
-                    ? Number(dirStatus.nextEntryPrice).toFixed(2)
+                  {displayDirStatus?.nextEntryPrice != null
+                    ? Number(displayDirStatus.nextEntryPrice).toFixed(2)
                     : "—"}
                   <br />
                   Est. net PnL:{" "}
-                  {typeof dirStatus?.estimatedNetPnl === "number"
-                    ? money(dirStatus.estimatedNetPnl)
+                  {typeof displayDirStatus?.estimatedNetPnl === "number"
+                    ? money(displayDirStatus.estimatedNetPnl)
                     : "—"}
-                  {dirStatus?.profitLocked && (
+                  {displayDirStatus?.profitLocked && (
                     <>
                       {" "}
                       · <Chip size="small" label="PROFIT LOCKED" color="success" variant="filled" />
-                      {typeof dirStatus?.maxProfitAchieved === "number" && (
-                        <> · High-water: {pct(dirStatus.maxProfitAchieved)}</>
+                      {typeof displayDirStatus?.maxProfitAchieved === "number" && (
+                        <> · High-water: {pct(displayDirStatus.maxProfitAchieved)}</>
                       )}
-                      {typeof dirStatus?.trailingStopPrice === "number" && (
-                        <> · Trailing stop: {Number(dirStatus.trailingStopPrice).toFixed(2)}</>
+                      {typeof displayDirStatus?.trailingStopPrice === "number" && (
+                        <> · Trailing stop: {Number(displayDirStatus.trailingStopPrice).toFixed(2)}</>
                       )}
                     </>
                   )}
@@ -1102,13 +1105,14 @@ export function TradingDashboard() {
             <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2 }}>
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                  <TextField label="Symbol" value={flipSymbol} onChange={(e) => setFlipSymbol(e.target.value)} size="small" fullWidth />
-                  <TextField label="Contracts" value={flipContracts} onChange={(e) => setFlipContracts(e.target.value)} size="small" sx={{ minWidth: 140 }} />
+                  <TextField label="Symbol" disabled={flipStartLoading || futuresFlipStatus?.running} value={flipSymbol} onChange={(e) => setFlipSymbol(e.target.value)} size="small" fullWidth />
+                  <TextField label="Contracts" disabled={flipStartLoading || futuresFlipStatus?.running} value={flipContracts} onChange={(e) => setFlipContracts(e.target.value)} size="small" sx={{ minWidth: 140 }} />
                 </Stack>
 
                 {/* Row 1: deltas */}
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mt: 2 }}>
                   <TextField
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     label="Buy delta"
                     value={flipBuyDelta}
                     onChange={(e) => setFlipBuyDelta(e.target.value)}
@@ -1116,6 +1120,7 @@ export function TradingDashboard() {
                     fullWidth
                   />
                   <TextField
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     label="Sell delta"
                     value={flipSellDelta}
                     onChange={(e) => setFlipSellDelta(e.target.value)}
@@ -1123,6 +1128,7 @@ export function TradingDashboard() {
                     fullWidth
                   />
                   <TextField
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     label="Entry short delta"
                     value={flipEntryShortDelta}
                     onChange={(e) => setFlipEntryShortDelta(e.target.value)}
@@ -1138,6 +1144,7 @@ export function TradingDashboard() {
                     <InputLabel id="flip-profit-mode-label">Trailing mode</InputLabel>
                     <Select
                       labelId="flip-profit-mode-label"
+                      disabled={flipStartLoading || futuresFlipStatus?.running}
                       value={flipProfitMode}
                       label="Trailing mode"
                       onChange={(e) => setFlipProfitMode(e.target.value as any)}
@@ -1148,7 +1155,7 @@ export function TradingDashboard() {
                   </FormControl>
                   <FormControl size="small" sx={{ minWidth: 160 }}>
                     <InputLabel id="flip-mode-label">Mode</InputLabel>
-                    <Select labelId="flip-mode-label" value={flipMode} label="Mode" onChange={(e) => setFlipMode(e.target.value as any)}>
+                    <Select labelId="flip-mode-label" disabled={flipStartLoading || futuresFlipStatus?.running} value={flipMode} label="Mode" onChange={(e) => setFlipMode(e.target.value as any)}>
                       <MenuItem value="preview">preview</MenuItem>
                       <MenuItem value="live">live</MenuItem>
                     </Select>
@@ -1157,6 +1164,7 @@ export function TradingDashboard() {
 
                 <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                 <TextField
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     label="Taker fee rate"
                     value={flipTakerFeeRate}
                     onChange={(e) => setFlipTakerFeeRate(e.target.value)}
@@ -1164,6 +1172,7 @@ export function TradingDashboard() {
                     fullWidth
                   />
                   <TextField
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     label="$ per contract"
                     value={flipPerContractFeeUsd}
                     onChange={(e) => setFlipPerContractFeeUsd(e.target.value)}
@@ -1172,6 +1181,7 @@ export function TradingDashboard() {
                   />
                   <TextField
                     label="Min profit multiple (fee gate)"
+                    disabled={flipStartLoading || futuresFlipStatus?.running}
                     value={flipMinProfitMultiple}
                     onChange={(e) => setFlipMinProfitMultiple(e.target.value)}
                     size="small"
@@ -1180,6 +1190,7 @@ export function TradingDashboard() {
                   />
                   {flipProfitMode === "profit-bound" && (
                     <TextField
+                      disabled={flipStartLoading || futuresFlipStatus?.running}
                       label="Profit lock threshold (%)"
                       value={flipProfitLockThreshold}
                       onChange={(e) => setFlipProfitLockThreshold(e.target.value)}

@@ -39,6 +39,7 @@ export type TradesContextValue = {
   lastTrade: TradeEvent | null;
   serverStatus: RunnerStatus | null;
   futuresFlipStatus: any | null;
+  futuresMomentumStatus: any | null;
 };
 
 const TradesContext = createContext<TradesContextValue | null>(null);
@@ -49,6 +50,7 @@ export function TradesProvider({ children }: { children: React.ReactNode }) {
   const [trades, setTrades] = useState<TradeEvent[]>([]);
   const [serverStatus, setServerStatus] = useState<RunnerStatus | null>(null);
   const [futuresFlipStatus, setFuturesFlipStatus] = useState<any | null>(null);
+  const [futuresMomentumStatus, setFuturesMomentumStatus] = useState<any | null>(null);
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
@@ -67,12 +69,14 @@ export function TradesProvider({ children }: { children: React.ReactNode }) {
     };
     const onStatus = (s: RunnerStatus) => setServerStatus(s);
     const onFuturesFlipStatus = (s: any) => setFuturesFlipStatus(s);
+    const onFuturesMomentumStatus = (s: any) => setFuturesMomentumStatus(s);
 
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("trade", onTrade);
     socket.on("status", onStatus);
     socket.on("futuresFlipStatus", onFuturesFlipStatus);
+    socket.on("futuresMomentumStatus", onFuturesMomentumStatus);
 
     return () => {
       socket.off("connect", onConnect);
@@ -80,6 +84,7 @@ export function TradesProvider({ children }: { children: React.ReactNode }) {
       socket.off("trade", onTrade);
       socket.off("status", onStatus);
       socket.off("futuresFlipStatus", onFuturesFlipStatus);
+      socket.off("futuresMomentumStatus", onFuturesMomentumStatus);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -93,8 +98,9 @@ export function TradesProvider({ children }: { children: React.ReactNode }) {
       lastTrade: trades[0] ?? null,
       serverStatus,
       futuresFlipStatus,
+      futuresMomentumStatus,
     };
-  }, [connected, socketUrl, trades, serverStatus, futuresFlipStatus]);
+  }, [connected, socketUrl, trades, serverStatus, futuresFlipStatus, futuresMomentumStatus]);
 
   return <TradesContext.Provider value={value}>{children}</TradesContext.Provider>;
 }
