@@ -559,16 +559,9 @@ app.get("/", (_req, res) => {
     ].join("\n"),
   );
 });
-const mongoUri = process.env.MONGO_DB_URI;
+// const mongoUri = process.env.MONGO_DB_URI;
 
-mongoose.connect(String(mongoUri)).then(() => {
-    console.log("Connected to MongoDB");
-    httpServer.listen(cfg.port, () => {
-      // eslint-disable-next-line no-console
-      console.log(`coinbase-bot-server listening on :${cfg.port}`);
-    });
-}).catch((err) => {
-    console.error("Error connecting to MongoDB", err);
-})
-
-
+httpServer.listen(cfg.port, () => {
+  // eslint-disable-next-line no-console
+  console.log(`coinbase-bot-server listening on :${cfg.port}`);
+});
